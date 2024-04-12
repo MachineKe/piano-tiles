@@ -14,9 +14,8 @@ let alpha=0;
 
 function preload() {
   soundFormats('mp3', 'ogg');
-  //mySound = loadSound('https://dl.dropbox.com/s/uuh53peopd55oe1/DEAD.mp3?');
+  mySound = loadSound('https://dl.dropbox.com/s/ad3gwapcs4nd8kp/everyonedies.mp3?');
 }
-
 
 let score = 0;
 let s = 'play';
@@ -29,13 +28,18 @@ class Tile{
     this.h = h/5;
     this.x = 1 + this.lane*w/4;
     this.y = -2*this.h;
-    this.speed = 6;
+    this.speed = 5;
     this.once = true;
     this.trolled = false;
+    this.freq = 2;
   }
   
   move(r,a){
       this.y+=r*this.speed+a;
+      
+      if(this.y>5*this.h/2 && !troll && !this.trolled){
+        this.trolled = true;
+      }
       
       if(this.y>5*this.h/2 && troll && !this.trolled){
         this.trolled = true;
@@ -92,7 +96,15 @@ class Tile{
   }
   
   show(r,a){
+    if(blink){
+      this.freq-=1;
+      if(!this.freq){
+        col = 255 - col;
+        this.freq = 2;
+      }
+    }
       fill(255-col);
+      noStroke();
       push();
         translate(this.x,this.y);
         rectMode(CENTER);
@@ -112,22 +124,53 @@ function setup(){
   now = int(random(4));
   tiles.push(new Tile(now,width,height));
   amp = new p5.Amplitude();
-  //mySound.play();
+  mySound.play();
 }
  
 function mousePressed(){
-  if(tiles[0].touched(mouseX,mouseY,alpha)){
-    tiles.splice(0,1);
+  if(gameOver){
+    gameReset();
   }
-  else gameOver = true;
+  else{
+    if(tiles[0].touched(mouseX,mouseY,alpha)){
+      tiles.splice(0,1);
+    }
+    else gameOver = true;
+  }
+}
+
+function gameReset(){
+  troll = false;
+  blink = false;
+  
+  score = 0;
+  s = 'play';
+  
+  tiles = [];
+  gameOver = false;
+  gameWon = false;
+  
+  count =0;
+  col = 0;
+
+  now = 0;
+  prv = 0;
+
+  alpha=0;
+  
+  background(col);
+  now = int(random(4));
+  tiles.push(new Tile(now,width,height));
+  mySound.play();
 }
   
 
 troll = false;
+blink = false;
 
 function draw(){
   frameRate(30);
-  alpha = frameCount/200;
+  alpha = score/40;
   varR = amp.getLevel();
   
   if(tiles[tiles.length-1].ding()){
@@ -142,9 +185,9 @@ function draw(){
     tiles.push(new Tile(now,width,height));
   }
   
-  for(tile of tiles){
+  for(var tile of tiles){
     if(tile.dong()){
-      s = 'shabash';
+      s = 'LMAO';
       gameOver=true;
     }
   }
@@ -164,13 +207,16 @@ function draw(){
     
   if(score>250)
     troll = true;
+    
+  //if(score>400)
+    //blink = true;
   
   if(varR<0.2){
     varR = 0.8;
   } 
   else varR = map(varR,0.4,1,0.8,1);
   
-  background(col,200);
+  background(col,100);
   stroke(100);
   line(1*width/4,0,1*width/4,height);
   line(2*width/4,0,2*width/4,height);
@@ -185,6 +231,8 @@ function draw(){
     }
   }
   
+  stroke(255-col);
+  
   textSize(32);
   textAlign(CENTER);
   fill(col);
@@ -195,12 +243,12 @@ function draw(){
     gameWon = true;
   
   if(gameOver){
-    //mySound.stop();
+    mySound.stop();
     textSize(50);
     text('LOL YOU LOST',width/2,height/2);
   }
   if(gameWon){
-    //mySound.stop();
+    mySound.stop();
     textSize(50);
     background(col);
     text('YOU KILLED IT',width/2,height/2);
